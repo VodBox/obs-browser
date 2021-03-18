@@ -226,7 +226,9 @@ void BrowserClient::OnAcceleratedPaint(CefRefPtr<CefBrowser>, PaintElementType,
 		gs_texture_destroy(texture);
 		texture = nullptr;
 #endif
-		gs_texture_destroy(bs->texture);
+
+		if (bs->texture)
+			gs_texture_destroy(bs->texture);
 		bs->texture = nullptr;
 
 #if USE_TEXTURE_COPY
@@ -239,8 +241,14 @@ void BrowserClient::OnAcceleratedPaint(CefRefPtr<CefBrowser>, PaintElementType,
 
 		bs->texture = gs_texture_create(cx, cy, format, 1, nullptr, 0);
 #else
+#ifdef _WIN32
+		bs->texture = gs_texture_open_shared1(
+			(uint32_t)(uintptr_t)shared_handle);
+
+#else
 		bs->texture = gs_texture_open_shared(
 			(uint32_t)(uintptr_t)shared_handle);
+#endif
 #endif
 		obs_leave_graphics();
 

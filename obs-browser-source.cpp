@@ -158,7 +158,7 @@ bool BrowserSource::CreateBrowser()
 		CefBrowserSettings cefBrowserSettings;
 
 #ifdef SHARED_TEXTURE_SUPPORT_ENABLED
-#ifdef _WIN32
+#ifdef BROWSER_EXTERNAL_BEGIN_FRAME_ENABLED
 		if (!fps_custom) {
 			windowInfo.external_begin_frame_enabled = true;
 			cefBrowserSettings.windowless_frame_rate = 0;
@@ -378,7 +378,8 @@ void BrowserSource::SetShowing(bool showing)
 			true);
 		Json json = Json::object{{"visible", showing}};
 		DispatchJSEvent("obsSourceVisibleChanged", json.dump(), this);
-#if defined(_WIN32) && defined(SHARED_TEXTURE_SUPPORT_ENABLED)
+#if defined(BROWSER_EXTERNAL_BEGIN_FRAME_ENABLED) && \
+	defined(SHARED_TEXTURE_SUPPORT_ENABLED)
 		if (showing && !fps_custom) {
 			reset_frame = false;
 		}
@@ -413,7 +414,7 @@ void BrowserSource::Refresh()
 		true);
 }
 #ifdef SHARED_TEXTURE_SUPPORT_ENABLED
-#ifdef _WIN32
+#ifdef BROWSER_EXTERNAL_BEGIN_FRAME_ENABLED
 inline void BrowserSource::SignalBeginFrame()
 {
 	if (reset_frame) {
@@ -533,7 +534,8 @@ void BrowserSource::Tick()
 {
 	if (create_browser && CreateBrowser())
 		create_browser = false;
-#if defined(_WIN32) && defined(SHARED_TEXTURE_SUPPORT_ENABLED)
+#if defined(BROWSER_EXTERNAL_BEGIN_FRAME_ENABLED) && \
+	defined(SHARED_TEXTURE_SUPPORT_ENABLED)
 	if (!fps_custom)
 		reset_frame = true;
 #endif
@@ -549,14 +551,10 @@ void BrowserSource::Render()
 #endif
 
 	if (texture) {
-#ifdef __APPLE__
-		gs_effect_t *effect = obs_get_base_effect(
-			(hwaccel) ? OBS_EFFECT_DEFAULT_RECT
-				  : OBS_EFFECT_PREMULTIPLIED_ALPHA);
-#else
+		gs_texture_acquire_sync(texture, 1, 10);
+
 		gs_effect_t *effect =
 			obs_get_base_effect(OBS_EFFECT_PREMULTIPLIED_ALPHA);
-#endif
 
 		const bool current =
 			gs_is_srgb_format(gs_texture_get_color_format(texture));
@@ -564,9 +562,13 @@ void BrowserSource::Render()
 		while (gs_effect_loop(effect, "Draw"))
 			obs_source_draw(texture, 0, 0, 0, 0, flip);
 		gs_set_linear_srgb(previous);
+
+		
+		gs_texture_release_sync(texture, 0);
 	}
 
-#if defined(_WIN32) && defined(SHARED_TEXTURE_SUPPORT_ENABLED)
+#if defined(BROWSER_EXTERNAL_BEGIN_FRAME_ENABLED) && \
+	defined(SHARED_TEXTURE_SUPPORT_ENABLED)
 	SignalBeginFrame();
 #elif USE_QT_LOOP
 	ProcessCef();

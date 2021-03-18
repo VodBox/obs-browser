@@ -24,6 +24,8 @@ endif()
 
 option(BROWSER_PANEL_SUPPORT_ENABLED "Enables Qt web browser panel support" ON)
 
+option(BROWSER_EXTERNAL_BEGIN_FRAME_ENABLED "Enables the use of SendExternalBeginFrame" OFF)
+
 if(NOT APPLE)
 	option(USE_QT_LOOP "Runs CEF on the main UI thread alongside Qt instead of in its own thread" OFF)
 else()
@@ -171,6 +173,10 @@ endif()
 
 if(SHARED_TEXTURE_SUPPORT_ENABLED)
     target_compile_definitions(obs-browser PRIVATE SHARED_TEXTURE_SUPPORT_ENABLED)
+endif()
+
+if(BROWSER_EXTERNAL_BEGIN_FRAME_ENABLED)
+    target_compile_definitions(obs-browser PRIVATE BROWSER_EXTERNAL_BEGIN_FRAME_ENABLED)
 endif()
 
 set_target_properties(obs-browser PROPERTIES FOLDER "plugins/obs-browser")
