@@ -551,8 +551,6 @@ void BrowserSource::Render()
 #endif
 
 	if (texture) {
-		gs_texture_acquire_sync(texture, 1, 10);
-
 		gs_effect_t *effect =
 			obs_get_base_effect(OBS_EFFECT_PREMULTIPLIED_ALPHA);
 
@@ -562,9 +560,6 @@ void BrowserSource::Render()
 		while (gs_effect_loop(effect, "Draw"))
 			obs_source_draw(texture, 0, 0, 0, 0, flip);
 		gs_set_linear_srgb(previous);
-
-		
-		gs_texture_release_sync(texture, 0);
 	}
 
 #if defined(BROWSER_EXTERNAL_BEGIN_FRAME_ENABLED) && \

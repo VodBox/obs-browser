@@ -22,7 +22,7 @@
 #include "cef-headers.hpp"
 #include "browser-config.h"
 
-#define USE_TEXTURE_COPY 0
+#define USE_TEXTURE_COPY 1
 
 struct BrowserSource;
 
@@ -39,6 +39,7 @@ class BrowserClient : public CefClient,
 #ifdef SHARED_TEXTURE_SUPPORT_ENABLED
 #if USE_TEXTURE_COPY
 	gs_texture_t *texture = nullptr;
+	gs_keyed_mutex_t *mutex = nullptr;
 #endif
 	void *last_handle = nullptr;
 #endif

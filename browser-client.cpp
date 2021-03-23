@@ -225,26 +225,32 @@ void BrowserClient::OnAcceleratedPaint(CefRefPtr<CefBrowser>, PaintElementType,
 #if USE_TEXTURE_COPY
 		gs_texture_destroy(texture);
 		texture = nullptr;
+#else
+		gs_texture_destroy(bs->texture);
+		bs->texture = nullptr;
 #endif
 
-		if (bs->texture)
-			gs_texture_destroy(bs->texture);
-		bs->texture = nullptr;
-
 #if USE_TEXTURE_COPY
-		texture = gs_texture_open_shared(
+		texture = gs_texture_open_shared1(
 			(uint32_t)(uintptr_t)shared_handle);
+		gs_texture_acquire_sync(texture, 1, INFINITE);
 
-		uint32_t cx = gs_texture_get_width(texture);
-		uint32_t cy = gs_texture_get_height(texture);
-		gs_color_format format = gs_texture_get_color_format(texture);
+		if (!bs->texture) {
+			uint32_t cx = gs_texture_get_width(texture);
+			uint32_t cy = gs_texture_get_height(texture);
+			gs_color_format format =
+				gs_texture_get_color_format(texture);
 
-		bs->texture = gs_texture_create(cx, cy, format, 1, nullptr, 0);
+			bs->texture = gs_texture_create(cx, cy, format, 1,
+							nullptr, 0);
+		}
+
+		gs_copy_texture(bs->texture, texture);
+		gs_texture_release_sync(texture, 0);
 #else
 #ifdef _WIN32
 		bs->texture = gs_texture_open_shared1(
 			(uint32_t)(uintptr_t)shared_handle);
-
 #else
 		bs->texture = gs_texture_open_shared(
 			(uint32_t)(uintptr_t)shared_handle);
@@ -256,9 +262,11 @@ void BrowserClient::OnAcceleratedPaint(CefRefPtr<CefBrowser>, PaintElementType,
 	}
 
 #if USE_TEXTURE_COPY
-	if (texture && bs->texture) {
+	else if (texture && bs->texture) {
 		obs_enter_graphics();
+		//gs_texture_acquire_sync(texture, 1, INFINITE);
 		gs_copy_texture(bs->texture, texture);
+		//gs_texture_release_sync(texture, 0);
 		obs_leave_graphics();
 	}
 #endif
